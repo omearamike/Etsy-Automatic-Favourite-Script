@@ -26,7 +26,7 @@ class Session
 	def auth(username, password)
 		agent = Mechanize.new
 		agent.get("https://www.etsy.com/ie/signin")
-		agent.log = Logger.new "Log/mechanize.log"
+		agent.log = Logger.new "/Log/mechanize.log"
 		agent.page.forms[2]
 		agent.page.forms[2]["username"] = username
 		agent.page.forms[2]["password"] = password
@@ -75,7 +75,7 @@ class Listing
         response = open("https://openapi.etsy.com/v2/listings/#{listingid}/favored-by?api_key=#{@APIKEY}").read
         response = JSON.parse(response)
     	response = JSON.pretty_generate(response)
-    	auth_file = File.open("WorkingFiles/data.json", "w")
+    	auth_file = File.open("/WorkingFiles/data.json", "w")
     	auth_file.print response
     	auth_file.close 
 	end
@@ -97,7 +97,7 @@ class Database
 		@root = File.dirname(__FILE__)
 		begin
 		    # SQLite3::Database.new "SANDBOX_DB.db"
-		    db = SQLite3::Database.new "Database/FavList.db"
+		    db = SQLite3::Database.new "/Database/FavList.db"
 		    db.execute "CREATE TABLE IF NOT EXISTS FavList(Id INTEGER PRIMARY KEY, DATE TEXT, ListingId INT, UserId INT, MessageSent INT)"
 
 		rescue SQLite3::Exception => e 
@@ -111,7 +111,7 @@ class Database
 
 	#Add user to Database
 	def addUser
-		file = open("WorkingFiles/data.json")
+		file = open("/WorkingFiles/data.json")
         json = file.read
         parsed = JSON.parse(json)
         parsed['results'].each do |child|
@@ -124,7 +124,7 @@ class Database
         end
 
 
-        db = SQLite3::Database.open "Database/FavList.db"
+        db = SQLite3::Database.open "/Database/FavList.db"
         id = db.get_first_row "SELECT UserId FROM FavList WHERE UserId='#{@user_id}'" 
 
         # Ensures no duplicates and then adds the record
@@ -169,7 +169,7 @@ def run(listingId)
 	#Also adding JSON Data to the Database
 	database.addUser
 
-	@db = SQLite3::Database.open "Database/FavList.db"
+	@db = SQLite3::Database.open "/Database/FavList.db"
 
 		def upload #counts how many records in the database
 		    results = @db.get_first_row "select Id from FavList order by Id desc limit 1"
