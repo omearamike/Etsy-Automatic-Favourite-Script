@@ -71,9 +71,8 @@ end
 class Listing
 
 	# Takes the listing ID as an argument
-	def getjson(listingid)
-	APIKEY = @APIKEY
-        response = open("https://openapi.etsy.com/v2/listings/#{listingid}/favored-by?api_key=#{APIKEY}").read
+	def getjson(listingid, apikey)
+        response = open("https://openapi.etsy.com/v2/listings/#{listingid}/favored-by?api_key=#{apikey}").read
         response = JSON.parse(response)
     	response = JSON.pretty_generate(response)
     	auth_file = File.open("WorkingFiles/data.json", "w")
@@ -85,7 +84,7 @@ end #End of Listing Class
 # Test the User Class
 	def testListing
 		listing = Listing.new
-		listing.getjson(127179505)
+		listing.getjson(127179505, @APIKEY)
 	end
 # testListing #Run the testUser Method
 
@@ -163,7 +162,7 @@ def run(listingId)
 	@mytestAccount = 80353922
 	
 	#Getting JSON Data based on the Listing ID
-	listing.getjson(listingId)
+	listing.getjson(listingId, @APIKEY)
 
 	#Creating Database if it doesnt exist 
 	database.createDB
