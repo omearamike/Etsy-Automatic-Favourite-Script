@@ -7,7 +7,7 @@ require 'mechanize'
 require 'logger'
 require 'JSON'
 require 'sqlite3'
-#
+
 def readCredentials
   random_line = nil
   File.open("login.txt") do |file|
@@ -26,7 +26,7 @@ class Session
 	def auth(username, password)
 		agent = Mechanize.new
 		agent.get("https://www.etsy.com/ie/signin")
-		agent.log = Logger.new "mechanize.log"
+		agent.log = Logger.new "Log/mechanize.log"
 		agent.page.forms[2]
 		agent.page.forms[2]["username"] = username
 		agent.page.forms[2]["password"] = password
@@ -75,7 +75,7 @@ class Listing
         response = open("https://openapi.etsy.com/v2/listings/#{listingid}/favored-by?api_key=#{@APIKEY}").read
         response = JSON.parse(response)
     	response = JSON.pretty_generate(response)
-    	auth_file = File.open("data.json", "w")
+    	auth_file = File.open("WorkingFiles/data.json", "w")
     	auth_file.print response
     	auth_file.close 
 	end
@@ -111,7 +111,7 @@ class Database
 
 	#Add user to Database
 	def addUser
-		file = open("data.json")
+		file = open("WorkingFiles/data.json")
         json = file.read
         parsed = JSON.parse(json)
         parsed['results'].each do |child|
