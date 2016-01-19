@@ -7,7 +7,7 @@ require 'mechanize'
 require 'logger'
 require 'JSON'
 require 'sqlite3'
-
+#
 def readCredentials
   random_line = nil
   File.open("login.txt") do |file|
