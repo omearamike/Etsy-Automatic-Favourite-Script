@@ -76,6 +76,41 @@ class Initialize
 	end # createSettings
 end #End of Initialize Class
 
+
+# Class to retrieve the settings data from Json file
+class Getsettings
+
+	def jsonOpen
+		file = open("settings.json")
+		file = file.read
+		@file = JSON.parse(file)
+	end
+
+	def _getApikey
+		jsonOpen
+  		@ApiKey = @file['LoginCredentials']['Password']
+  		return @ApiKey
+     end
+
+     def _getUsername
+		jsonOpen
+  		@username = @file['LoginCredentials']['Username']
+  		return @username
+     end
+
+     def _getPassword
+		jsonOpen
+  		@password = @file['LoginCredentials']['Password']
+  		return @password
+     end
+
+     def _getSubject
+		jsonOpen
+  		@subject = @file['Message']['Subject']
+  		return @subject
+     end
+end # End of GetSettings
+
 class Session
 	# Takes the username and password creates
 	def auth(username, password)

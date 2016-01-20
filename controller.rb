@@ -3,20 +3,24 @@ require 'json'
 
 initilize = Initialize.new
 
+getsettings = Getsettings.new
+
+getsettings._getApikey
 initilize.prepareEnv
-
-if File.exist?('settings.json') == false
-	print "Would you like to create settings for this app? Y/n? "
-	settings = gets.chomp
-	if settings == "Y"
-		initilize.createSettings
-	else
-		print "\nYou will need to create settings to use this app! \n\n"
+def createSettings
+	if File.exist?('settings.json') == false
+		print "Would you like to create settings for this app? Y/n? "
+		settings = gets.chomp
+		if settings == "Y"
+			initilize.createSettings
+		else
+			print "\nYou will need to create settings to use this app! \n\n"
+		end
+	else 
+		print "Super, All settings are already set.\n(Edit your settings.json file if needed.)\n"
 	end
-else 
-	print "Super, All settings are already set.\n(Edit your settings.json file if needed.)\n"
-end
-
+end #End of createSettings Method
+createSettings
 # Test the session Class
 	def sessionTest
 		mytestAccount = 80353922
