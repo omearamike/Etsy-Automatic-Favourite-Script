@@ -8,18 +8,73 @@ require 'logger'
 require 'json'
 require 'sqlite3'
 
-def readCredentials
-  random_line = nil
-  File.open("login.txt") do |file|
-  file_lines = file.readlines()
-  @APIKEY = file_lines[0]
-  @USERNAME = file_lines[1]
-  @PASSWORD = file_lines[2]
-  end
-end
-readCredentials
+# Sets up Appliction to run for the first time
+class Initialize
+# Creates the neccessary Directorys for the application to run
+	def prepareEnv
+		Dir.mkdir("WorkingFiles") unless File.exists?("WorkingFiles")
+		Dir.mkdir("Log") unless File.exists?("Log")
+		Dir.mkdir("Database") unless File.exists?("Database")
+	end 
 
+# Allows listings Ids to be dynamically added to the settings file
+	YourStruct = Struct.new(:id, :listing)
+	class YourStruct
+		  def to_json(*a)
+		    {:id => self.id, :listing => self.listing}.to_json(*a)
+		  end
 
+		  def self.json_create(o)
+		    new(o['id'], o['car'])
+		  end
+	end
+
+# Takes the revelent Application Settings from User
+	def createSettings
+		print "Enter your API Key: "
+		apikey = gets.chomp
+		print "Enter your Username: "
+		username = gets.chomp
+		print "Enter your Password: "
+		password = gets.chomp
+
+		listing = "x", x = 1, b = [ YourStruct.new("Nil", "Nil")] # Varibles needed for the next bit of code
+		while listing != "done" do
+		print "Enter the Listing ID Numbers you would like to add (When your finished type done): "
+		listing = gets.chomp
+		a = [ YourStruct.new(x, listing)]
+		allListings = b + a
+		x = x + 1
+		end
+		allListings.pop
+		allListings.shift
+
+	  	print "Enter your Subject Line: "
+	  	subject = gets.chomp
+	  	print "Enter your Desired Message: "
+	  	message = gets.chomp
+	  	print "Good Job, Settings are Ready.\n (Edit your settings.json file if needed.)\n"
+
+	  	tempHash = {
+	  	"LoginCredentials" => {
+	  		"ApiKey" => apikey,
+   			"Username" => username,
+   			"Password" => password
+	  	},
+	  	"Listings" => allListings,
+	  	"Message" => {
+	  		"Subject" => subject,
+	  		"Message" => message
+	  	}	
+	}
+		tempHash = tempHash.to_json
+        tempHash = JSON.parse(tempHash)
+    	tempHash = JSON.pretty_generate(tempHash)
+		File.open("settings.json","w") do |f|
+		f.write(tempHash)
+		end
+	end # createSettings
+end #End of Initialize Class
 
 class Session
 	# Takes the username and password creates
@@ -36,37 +91,28 @@ class Session
 
 	# Puts userid into link and takes the subject and the message
 	def submitComment(userid, subject = "Subject", message = "Message")
-		agent = @agent
-		page = agent.page.body
-		favourites = agent.get("https://www.etsy.com/ie/conversations/new?with_id=#{userid}&ref=pr_contact")
-		body = favourites.body
-		page = Nokogiri::HTML(body) 
-		name = page.css('span.default-recipient')[0].text
-		name = name.split(" ")[0]
-		@name = name.capitalize
-		agent.page.forms[2]["subject"] =  "Hey #{@name}, thanks for the ❤️"
-		agent.page.forms[2]["message"] = "Hey #{@name},\n
-       Thank you for giving our shop some ❤️. If anything in particular catches your eye you can use this coupon code 'SHARETHELOVE' to get 20% Off any item on our store.\n
-       Hope to see you soon, \n
-       Mike | The Moose Creative |"
-		send = agent.page.forms[2].submit
-	end
+                agent = @agent
+                page = agent.page.body
+                favourites = agent.get("https://www.etsy.com/ie/conversations/new?with_id=#{userid}&ref=pr_contact")
+                body = favourites.body
+                page = Nokogiri::HTML(body)
+                name = page.css('span.default-recipient')[0].text
+                name = name.split(" ")[0]
+                @name = name.capitalize
+                agent.page.forms[2]["subject"] =  "Hey #{@name}, thanks for the ❤️"
+                agent.page.forms[2]["message"] = "Hey #{@name},\n
+        Thank you for giving our shop some ❤️. If anything in particular catches your eye you can use this coupon code SHARETHELOVE to get 20% Off any item on our store.\n
+        http://bit.ly/favTMC \n
+        Hope to see you soon, \n
+        Mike | The Moose Creative |"
+                send = agent.page.forms[2].submit
+        end
+
 
 
 end
 
-# Test the session Class
-	def sessionTest
-		mytestAccount = 80353922
-		# mytestAccount = 80353922
-		session = Session.new
-		session.auth(@USERNAME, @PASSWORD)
-		session.submitComment(mytestAccount)
-	end
-# sessionTest #Run the sessionTest Method
 
-
-@listingid = 192451863
 
 class Listing
 
@@ -80,14 +126,6 @@ class Listing
     	auth_file.close 
 	end
 end #End of Listing Class
-
-# Test the User Class
-	def testListing
-		listing = Listing.new
-		listing.getjson(127179505, @APIKEY)
-	end
-# testListing #Run the testUser Method
-
 
 
 class Database
@@ -145,72 +183,3 @@ class Database
 
 end #end of Database Class
 
-	def testDatabase
-		database = Database.new
-		database.createDB
-		database.addUser
-	end
-
-# testDatabase
-
-def run(listingId)
-
-	listing = Listing.new
-	@session = Session.new
-	database = Database.new
-
-	@mytestAccount = 80353922
-	
-	#Getting JSON Data based on the Listing ID
-	listing.getjson(listingId, @APIKEY)
-
-	#Creating Database if it doesnt exist 
-	database.createDB
-	#Also adding JSON Data to the Database
-	database.addUser
-
-	@db = SQLite3::Database.open "Database/FavList.db"
-
-		def upload #counts how many records in the database
-		    results = @db.get_first_row "select Id from FavList order by Id desc limit 1"
-		    results = results.join.to_i
-		    @max_id = results + 1
-		end #End of upload
-		upload
-
-	#Add user to the database
-	def addUser
-		#Creating Auth Session
-		@session.auth(@USERNAME, @PASSWORD)
-
-		@total_id = @max_id
-		@max_id.times do
-		    if @max_id >= 2
-		            @max_id = @max_id - 1
-		            @updated = @db.get_first_value "SELECT MessageSent FROM FavList WHERE Id='#{@max_id}'"
-		            puts @updated 
-		            puts @max_id
-
-		        if @updated == "FALSE"
-		            @user_id = @db.get_first_value "SELECT UserId FROM FavList WHERE Id='#{@max_id}'"
-		            # puts @user_id
-		            @db.execute "UPDATE FavList SET MessageSent='TRUE' WHERE Id='#{@max_id}'"
-		            @session.submitComment(@user_id)
-					# puts @user_id
-		        else 
-
-		        end
-		    else 
-		    	puts "Everything upto date"
-		    end
-
-		end
-				#Submitting Comment to everyone in the Database
-	end #End of addUser
-	addUser
-end #End of run
-
-run(187018850)
-run(127179505)
-run(208315501)
-run(260860360)
